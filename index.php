@@ -316,38 +316,14 @@
 
                 $item_name = 0;
 
-                $found_objects_in_slot = 0;
+                $found_first_item_in_slot = 0;
 
                 foreach ($span->find('font') as $font)
                 {
-                    if ($font->size == 2 && $found_objects_in_slot > 0)
+                    if ($font->size == 2 && $found_first_item_in_slot == 0)
                     {
-                        if (strpos($font->plaintext, 'Type:') !== false)
-                        {
-                            $augment_html = $font->innertext;
+                        $found_first_item_in_slot = 1;
 
-                            $augment_html = str_replace('images/icons/item_', 'http://www.shardsofdalaya.com/fomelo/images/icons/item_', $augment_html);
-
-                            echo '<p>';
-                            echo '<div style="background-color: #222222; color: white; width: 400px; padding: 8px;">' . $augment_html . '</div>';
-                            echo '</p>';
-
-                            if (preg_match('/Type:\s+(\d+)/', $font->plaintext, $matches))
-                            {
-                                echo '<p>' . 'Type ' . $matches[1] . ' Aug Slot: NOT EMPTY' . '</p>';
-
-                                $augment_number = $found_objects_in_slot;
-
-                                if (strpos($wiki_data, '| augslot1 = '))
-                                    $augment_number = 2;
-
-                                echo '<p>' . '<textarea cols="75">' . '| augslot' . $augment_number . ' = ' . $matches[1] . '</textarea>' . '</p>';
-                            }
-                        }
-                    }
-
-                    if ($font->size == 2 && $found_objects_in_slot == 0)
-                    {
                         if (strpos($item_name, 'Empty slot') !== false)
                         {
                             echo '<p>' . 'Empty slot' . '</p>';
@@ -387,11 +363,14 @@
 
                         $item_data_html = str_replace('images/icons/item_', 'http://www.shardsofdalaya.com/fomelo/images/icons/item_', $item_data_html);
 
-                        //$item_data = $font->plaintext;
                         $item_data = $item_data_html;
+
                         $item_data = preg_replace('#<br\s*/?>#i', "\n", $item_data);
+
                         $item_data = strip_tags($item_data);
+
                         $item_data = str_remove_spaces_from_end_of_lines($item_data);
+
                         $item_data = str_replace('  Size:', ' Size:', $item_data);
 
                         $wiki_data = '{{Itemstats' . "\n";
@@ -698,6 +677,27 @@
                             }
                         }
 
+                        $aug_slot_number = 1;
+
+                        foreach ($span->find('font') as $font)
+                        {
+                            if ($font->size == 2 && $found_first_item_in_slot == 1)
+                            {
+                                if (strpos($font->plaintext, 'Type:') !== false)
+                                {
+                                    if (preg_match('/Type:\s+(\d+)/', $font->plaintext, $matches))
+                                    {
+                                        if (strpos($wiki_data, '| augslot1 = '))
+                                            $aug_slot_number = 2;
+
+                                        $item_data .= 'Type ' . $matches[1] . ' Aug Slot: Not Empty' . "\n";
+
+                                        $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $matches[1] . "\n";
+                                    }
+                                }
+                            }
+                        }
+
                         if (strpos($item_data, 'Class:') !== false)
                         {
                             $item_classes = get_item_property_list($item_data, 'Class');
@@ -773,6 +773,43 @@
                         echo '<br>';
                         echo '<div style="background-color: #222222; color: white; width: 400px; padding: 8px;">' . $item_data_html . '</div>';
                         echo '<br>';
+
+                        foreach ($span->find('font') as $font)
+                        {
+                            if ($font->size == 2 && $found_first_item_in_slot == 1)
+                            {
+                                if (strpos($font->plaintext, 'Type:') !== false)
+                                {
+                                    $augment_html = $font->innertext;
+
+                                    $augment_html = str_replace('images/icons/item_', 'http://www.shardsofdalaya.com/fomelo/images/icons/item_', $augment_html);
+
+                                    $augment_name = substr_between($augment_html, '<u>', '</u>');
+
+                                    $augment_name_wiki = $augment_name;
+
+                                    $augment_name_wiki = str_replace('`', "'", $augment_name_wiki); // tilde fix
+
+                                    $augment_name_wiki = str_replace('&lsquo;', "'", $augment_name_wiki); // quote fix
+
+                                    $augment_name_wiki = str_replace('Shirtri', 'Shiritri', $augment_name_wiki); // Shiritri typo fix
+
+                                    $augment_name_wiki = str_replace('Song:', 'Spell:', $augment_name_wiki); // redirect Songs to Spells
+
+                                    $augment_name_wiki = str_replace(' ', '_', $augment_name_wiki);
+
+                                    $augment_url_wiki = 'http://wiki.shardsofdalaya.com/index.php/' . $augment_name_wiki;
+
+                                    $augment_link_wiki = '<a href="' . $augment_url_wiki . '" style="color: white;">' . $augment_name_wiki . '</a>';
+
+                                    $augment_html = str_replace($augment_name, $augment_link_wiki, $augment_html);
+
+                                    echo '<div style="background-color: #222222; color: white; width: 400px; padding: 8px;">' . $augment_html . '</div>';
+                                    echo '<br>';
+                                }
+                            }
+                        }
+
                         echo '<textarea cols="75" rows="25">' . $wiki_data . '</textarea>';
                         echo '<textarea cols="75" rows="25">' . $item_data . '</textarea>';
                         echo '</p>';
@@ -789,9 +826,6 @@
 
                         $item_name = trim($item_name, "\n");
                     }
-
-                    if ($font->size == 2)
-                        $found_objects_in_slot++;
                 }
 
                 echo '<hr>';
