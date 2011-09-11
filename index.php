@@ -510,6 +510,10 @@
                         {
                             $item_property = get_item_skill_mod($item_data);
 
+                            $item_property[0] = preg_replace('/(\d+)\s+Hand/', '$1H', $item_property[0]);
+
+                            $item_property[0] = str_replace('Hand To Hand', 'Hand to Hand', $item_property[0]);
+
                             $wiki_data .= '| skillmod = '    . $item_property[0] . "\n";
                             $wiki_data .= '| skillmodnum = ' . $item_property[1] . "\n";
                         }
