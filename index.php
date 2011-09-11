@@ -333,14 +333,21 @@
                             echo '</p>';
 
                             if (preg_match('/Type:\s+(\d+)/', $font->plaintext, $matches))
-                                echo 'Type ' . $matches[1] . ' Aug Slot: NOT EMPTY' . '<br>';
+                            {
+                                echo '<p>' . 'Type ' . $matches[1] . ' Aug Slot: NOT EMPTY' . '</p>';
+
+                                $augment_number = $found_objects_in_slot;
+
+                                if (strpos($wiki_data, '| augslot1 = '))
+                                    $augment_number = 2;
+
+                                echo '<p>' . '<textarea cols="75">' . '| augslot' . $augment_number . ' = ' . $matches[1] . '</textarea>' . '</p>';
+                            }
                         }
                     }
 
                     if ($font->size == 2 && $found_objects_in_slot == 0)
                     {
-                        $found_objects_in_slot++;
-
                         if (strpos($item_name, 'Empty slot') !== false)
                         {
                             echo '<p>' . 'Empty slot' . '</p>';
@@ -778,6 +785,9 @@
 
                         $item_name = trim($item_name, "\n");
                     }
+
+                    if ($font->size == 2)
+                        $found_objects_in_slot++;
                 }
 
                 echo '<hr>';
