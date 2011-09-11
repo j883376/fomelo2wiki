@@ -1,0 +1,831 @@
+<html>
+
+<head>
+
+    <meta http-equiv="content-type" content="text/html" charset="utf-8" />
+
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+
+    <!-- <link rel="stylesheet" type="text/css" href="index.css" /> -->
+
+    <title>fomelo2wiki</title>
+
+</head>
+
+<body>
+
+    <div id="top"></div>
+
+    <h1>fomelo2wiki</h1>
+
+    <form action="index.php" method="get">
+
+        <p>
+            Character Name:
+            <br>
+            <input type="search" id="id_search_text" name="search" />
+            <input type="submit" id="id_search_button" value="Search" />
+        </p>
+
+        <p>
+            Slot:
+            <select id="id_slot_select" name="slot">
+                <option value="all" selected>All</option>
+                <option value="t_neck">Neck</option>
+                <option value="t_head">Head</option>
+                <option value="t_left_ear">Left Ear</option>
+                <option value="t_right_ear">Right Ear</option>
+                <option value="t_face">Face</option>
+                <option value="t_chest">Chest</option>
+                <option value="t_shoulders">Shoulders</option>
+                <option value="t_arms">Arms</option>
+                <option value="t_hands">Hands</option>
+                <option value="t_left_wrist">Left Wrist</option>
+                <option value="t_right_wrist">Right Wrist</option>
+                <option value="t_back">Back</option>
+                <option value="t_left_finger">Left Finger</option>
+                <option value="t_right_finger">Right Finger</option>
+                <option value="t_waist">Waist</option>
+                <option value="t_legs">Legs</option>
+                <option value="t_feet">Feet</option>
+                <option value="t_primary">Primary</option>
+                <option value="t_secondary">Secondary</option>
+                <option value="t_charm">Charm</option>
+                <option value="t_range">Range</option>
+                <option value="t_ammo">Ammo</option>
+            </select>
+        </p>
+
+    </form>
+
+    <?php
+
+        function substr_between($s, $l, $r)
+        {  
+            $il = strpos($s, $l, 0) + strlen($l);
+            $ir = strpos($s, $r, $il);
+            return substr($s, $il, ($ir - $il));
+        }
+
+        function str_remove_spaces_from_end_of_lines($text)
+        {
+            $lines = explode("\n", $text);
+
+            $result = '';
+
+            foreach ($lines as $line)
+            {
+                if ((strpos($line, "\n") == 0) && (strlen($line) == 0))
+                    continue;
+
+                $line = rtrim($line, ' ');
+                $line .= "\n";
+
+                $result .= $line;
+            }
+
+            return $result;
+        }
+
+        include('simple_html_dom.php');
+
+        set_time_limit(0); // prevent maximum execution time timeout
+
+        $item_name = 'null';
+
+        function get_item_exp_levels($text)
+        {
+            if (preg_match('/Level:\s+\d+\/(\d+)/', $text, $matches))
+                return $matches[1];
+
+            return 0;
+        }
+
+        function get_item_property($text, $property)
+        {
+            if (preg_match('/' . $property . ':\s+([+-]?\d+[%]?)/', $text, $matches))
+                return $matches[1];
+
+            return 0;
+        }
+
+        function get_item_property_newline($text, $property)
+        {
+            if (preg_match('/\n' . $property . ':\s+([+-]?\d+[%]?)/', $text, $matches))
+                return $matches[1];
+
+            return 0;
+        }
+
+        function get_item_property_list($text, $property)
+        {
+            $list = substr_between($text, $property . ': ', "\n");
+
+            $values = explode(' ', $list);
+
+            return $values;
+        }
+
+        function get_item_decimal($text, $property)
+        {
+            if (preg_match('/'. $property . ':\s+(\d+\.\d+)/', $text, $matches))
+                return $matches[1];
+
+            return 0;
+        }
+
+        function get_item_skill($text)
+        {
+            if (preg_match('/Skill:\s+(1H Blunt|1H Slashing|2H Blunt|Piercing|Archery|Throwing|Hand to Hand)/', $text, $matches))
+                return $matches[1];
+
+            return 0;
+        }
+
+        function get_item_skill_mod($text)
+        {
+            $text = substr_between($text, 'Skill Mod: ', "\n");
+
+            $find = strpos($text, ' +');
+
+            if (strpos($text, '-') !== false)
+                $find = strpos($text, ' -');
+
+            $key = substr($text, 0, $find);
+
+            $value = substr($text, $find + 1);
+
+            $skill_mod = Array();
+            array_push($skill_mod, $key);
+            array_push($skill_mod, $value);
+
+            return $skill_mod;
+        }
+
+        function get_item_instrument_modifier($text)
+        {
+            $text = substr_between($text, 'Instrument Modifier: ', "\n");
+
+            $find = strpos($text, ' (');
+
+            $key = substr($text, 0, $find);
+
+            $value = substr_between($text, '(', ')');
+
+            $instrument_modifier = Array();
+            array_push($instrument_modifier, $key);
+            array_push($instrument_modifier, $value);
+
+            return $instrument_modifier;
+        }
+
+        function get_item_bane_damage($text)
+        {
+            if (preg_match('/Bane\s+DMG:\s+(\d+)\s+(\w+)\n/', $text, $matches))
+            {
+                $bane_damage = Array();
+                array_push($bane_damage, $matches[1]);
+                array_push($bane_damage, $matches[2]);
+
+                return $bane_damage;
+            }
+
+            return 0;
+        }
+
+        function get_item_spell_damage($text)
+        {
+            if (preg_match('/(Fire|Cold|Magic|Disease|Poison)\s+DMG:\s+(\d+)/', $text, $matches))
+            {
+                $spell_damage = Array();
+                array_push($spell_damage, $matches[1]);
+                array_push($spell_damage, $matches[2]);
+
+                return $spell_damage;
+            }
+
+            return 0;
+        }
+
+        function get_item_focus_effect($text)
+        {
+            $focus_effect = substr_between($text, 'Focus Effect: ', "\n");
+
+            return $focus_effect;
+        }
+
+        function get_item_effect($text)
+        {
+            $text = substr_between($text, "\nEffect: ", "\n");
+
+            $find = strpos($text, ' (');
+
+            $key = substr($text, 0, $find);
+
+            $value1 = 'null';
+            $value2 = 'null';
+
+            if (strpos($text, '(Worn)') !== false)
+            {
+                $value1 = 'Worn';
+
+                $value2 = 'null';
+            }
+            else
+            {
+                $value1 = substr_between($text, '(', ',');
+
+                $value2 = substr_between($text, ', ', ')');
+            }
+
+            $effect = Array();
+            array_push($effect, $key);
+            array_push($effect, $value1);
+            array_push($effect, $value2);
+
+            return $effect;
+        }
+
+        function get_item_haste($text)
+        {
+            if (preg_match('/Effect:\s+(\d+%)\s+Haste/', $text, $matches))
+                return $matches[1];
+
+            return 0;
+        }
+
+        function get_item_size($text)
+        {
+            if (preg_match('/Size:\s+(Tiny|Small|Medium|Large|Giant)/', $text, $matches))
+                return $matches[1];
+
+            return 0;
+
+            //$size = substr_between($text, 'Size: ', "\n");
+
+            //return $size;
+        }
+
+        function get_item_aug_slots($text)
+        {
+            if (preg_match_all('/Type\s+(\d+)\s+Aug\s+Slot:/', $text, $matches, PREG_SET_ORDER))
+                return $matches;
+
+            return 0;
+        }
+
+        $file_get_context = stream_context_create(array('http' => array('header' => 'Connection: close')));
+
+        if (isset($_GET['search']))
+            $search = $_GET['search'];
+        else
+            $search = '';
+
+        $search = ucwords($search);
+
+        if ($search == '')
+            die('No search found!');
+
+        if (isset($_GET['slot']))
+            $slot = $_GET['slot'];
+        else
+            $slot = 'all';
+
+        echo '<p>' . 'search: ' . $search . '</p>';
+
+        $url = 'http://shardsofdalaya.com/fomelo/fomelo.php?char=' . $search;
+
+        echo '<p>' . 'fomelo url: ' . '<a href="' . $url . '">' . $url . '</a>' . '</p>';
+
+        $html = file_get_html($url, false, $file_get_context);
+
+        if (strpos($html->plaintext, 'Character not found') !== false)
+            die('<p style="background-color: red; color: white; width: 400px; padding: 8px;">fomelo info: Character not found</p>');
+
+        echo '<hr>';
+
+        foreach ($html->find('span') as $span)
+        {
+            if (strpos($span->id, 't_') !== false)
+            {
+                if ((strlen($slot) > 0) && ($slot !== 'all'))
+                    if ($span->id !== $slot)
+                        continue;
+
+                echo '<p>' . 'slot: ' . $span->id . '</p>';
+
+                $item_name = 0;
+
+                $found_objects_in_slot = 0;
+
+                foreach ($span->find('font') as $font)
+                {
+                    if ($font->size == 2 && $found_objects_in_slot > 0)
+                    {
+                        if (strpos($font->plaintext, 'Type:') !== false)
+                        {
+                            $augment_html = $font->innertext;
+
+                            $augment_html = str_replace('images/icons/item_', 'http://www.shardsofdalaya.com/fomelo/images/icons/item_', $augment_html);
+
+                            echo '<p>';
+                            echo '<div style="background-color: #222222; color: white; width: 400px; padding: 8px;">' . $augment_html . '</div>';
+                            echo '</p>';
+
+                            if (preg_match('/Type:\s+(\d+)/', $font->plaintext, $matches))
+                                echo 'Type ' . $matches[1] . ' Aug Slot: NOT EMPTY' . '<br>';
+                        }
+                    }
+
+                    if ($font->size == 2 && $found_objects_in_slot == 0)
+                    {
+                        $found_objects_in_slot++;
+
+                        if (strpos($item_name, 'Empty slot') !== false)
+                        {
+                            echo '<p>' . 'Empty slot' . '</p>';
+                            continue;
+                        }
+
+                        $wiki_item_name = $item_name;
+
+                        $wiki_item_name = str_replace('`', "'", $wiki_item_name); // tilde fix
+
+                        $wiki_item_name = str_replace('&lsquo;', "'", $wiki_item_name); // quote fix
+
+                        $wiki_item_name = str_replace('Shirtri', 'Shiritri', $wiki_item_name); // Shiritri typo fix
+
+                        $wiki_item_name = str_replace('Song:', 'Spell:', $wiki_item_name); // redirect Songs to Spells
+
+                        $wiki_item_name = str_replace(' ', '_', $wiki_item_name);
+
+                        $wiki_item_url = 'http://wiki.shardsofdalaya.com/index.php/' . $wiki_item_name;
+
+                        echo '<p>';
+                        echo 'wiki url: ';
+                        echo '<a href="' . $wiki_item_url . '">';
+                        echo $wiki_item_name;
+                        echo '</a>';
+                        echo '</p>';
+
+                        $wiki_item_html = file_get_html($wiki_item_url, false, $file_get_context);
+
+                        if (strpos($wiki_item_html->plaintext, 'There is currently no text in this page') !== false)
+                            echo '<p style="background-color: green; color: white; width: 400px; padding: 8px;">wiki info: There is currently no text in this page</p>';
+
+                        if (strpos($wiki_item_html->plaintext, 'This item is using an outdated format!') !== false)
+                            echo '<p style="background-color: red; color: white; width: 400px; padding: 8px;">wiki info: This item is using an outdated format!</p>';
+
+                        $item_data_html = $font->innertext;
+
+                        $item_data_html = str_replace('images/icons/item_', 'http://www.shardsofdalaya.com/fomelo/images/icons/item_', $item_data_html);
+
+                        //$item_data = $font->plaintext;
+                        $item_data = $item_data_html;
+                        $item_data = preg_replace('#<br\s*/?>#i', "\n", $item_data);
+                        $item_data = strip_tags($item_data);
+                        $item_data = str_remove_spaces_from_end_of_lines($item_data);
+                        $item_data = str_replace('  Size:', ' Size:', $item_data);
+
+                        $wiki_data = '{{Itemstats' . "\n";
+
+                        $wiki_data .= '| name = ' . $item_name . "\n";
+
+                        $item_image_found = 0;
+
+                        foreach ($span->find('img') as $img)
+                        {
+                            if ($item_image_found == 1)
+                                continue;
+
+                            if (strpos($img->src, 'icons/item_') !== false)
+                            {
+                                $item_image_found = 1;
+
+                                $item_image = substr_between($img->src, 'icons/item_', '.png');
+
+                                $wiki_data .= '| image = ' . $item_image . "\n";
+                            }
+                        }
+
+                        $wiki_data .= '| source' . "\n";
+
+                        if (strpos($item_data, '[EXPABLE]') !== false)
+                        {
+                            $wiki_data .= '| expable = 1' . "\n";
+
+                            $wiki_data .= '| expgrowthrate' . "\n";
+                        }
+
+                        if (strpos($item_data, 'Level:') !== false)
+                        {
+                            $item_exp_levels = get_item_exp_levels($item_data);
+
+                            $wiki_data .= '| explevels = ' . $item_exp_levels . "\n";
+
+                            $wiki_data .= '| expperlevel' . "\n";
+                        }
+
+                        $wiki_data .= "\n";
+
+                        $wiki_data .= '<!--End Infobox - Below are stats-->' . "\n";
+
+                        if (strpos($item_data, '[BOUND]') !== false)
+                            $wiki_data .= '| flagboe = 1' . "\n";
+
+                        if (strpos($item_data, '[FACTION BOUND]') !== false)
+                            $wiki_data .= '| flagfac = 1' . "\n";
+
+                        if (strpos($item_data, '[LORE]') !== false)
+                            $wiki_data .= '| flaglore = 1' . "\n";
+
+                        if (strpos($item_data, '[MAGIC]') !== false)
+                            $wiki_data .= '| flagmagic = 1' . "\n";
+
+                        if (strpos($item_data, '[NO DROP]') !== false)
+                            $wiki_data .= '| flagnodrop = 1' . "\n";
+
+                        if (strpos($item_data, '[NO RENT]') !== false)
+                            $wiki_data .= '| flagnorent = 1' . "\n";
+
+                        //if (strpos($item_data, '[PRISTINE]') !== false)
+                            //$wiki_data .= '| flagpristine = 1' . "\n";
+
+                        if (strpos($item_data, '[AUGMENTATION]') !== false)
+                            $wiki_data .= '| flagaug = 1' . "\n";
+
+                        if (strpos($item_data, 'Slot:') !== false)
+                        {
+                            $item_slots = get_item_property_list($item_data, 'Slot');
+
+                            $slot_number = 1;
+
+                            foreach ($item_slots as $item_slot)
+                            {
+                                $wiki_data .= '| slot' . $slot_number . ' = ' . $item_slot . "\n";
+
+                                $slot_number++;
+                            }
+                        }
+
+                        if (strpos($item_data, 'Note: Ammo slot stats are not counted') !== false)
+                            $wiki_data .= '| ammonote = 1' . "\n";
+
+                        if (strpos($item_data, 'AC:') !== false)
+                        {
+                            $item_property = get_item_property($item_data, 'AC');
+
+                            $wiki_data .= '| ac = ' . $item_property . "\n";
+                        }
+
+                        if (strpos($item_data, "\nDMG:") !== false)
+                        {
+                            $item_property = get_item_property_newline($item_data, 'DMG');
+
+                            $wiki_data .= '| dmg = ' . $item_property . "\n";
+                        }
+
+                        if (strpos($item_data, 'Atk Delay:') !== false)
+                        {
+                            $item_property = get_item_property($item_data, 'Atk Delay');
+
+                            $wiki_data .= '| atkdelay = ' . $item_property . "\n";
+                        }
+
+                        if (strpos($item_data, 'Skill:') !== false)
+                        {
+                            $item_property = get_item_skill($item_data);
+
+                            $wiki_data .= '| skill = ' . $item_property . "\n";
+                        }
+
+                        if (strpos($item_data, 'Skill Mod:') !== false)
+                        {
+                            $item_property = get_item_skill_mod($item_data);
+
+                            $wiki_data .= '| skillmod = '    . $item_property[0] . "\n";
+                            $wiki_data .= '| skillmodnum = ' . $item_property[1] . "\n";
+                        }
+
+                        if (strpos($item_data, 'Instrument Modifier:') !== false)
+                        {
+                            $item_property = get_item_instrument_modifier($item_data);
+
+                            $wiki_data .= '| insttypemod = ' . $item_property[0] . "\n";
+                            $wiki_data .= '| instmod = '     . $item_property[1] . "\n";
+                        }
+
+                        if (strpos($item_data, 'Bane DMG:') !== false)
+                        {
+                            $item_property = get_item_bane_damage($item_data);
+
+                            $wiki_data .= '| banedmgmod = ' . $item_property[0] . "\n";
+                            $wiki_data .= '| banedmgnum = ' . $item_property[1] . "\n";
+                        }
+
+                        if
+                        (
+                            (strpos($item_data, 'Fire')    !== false) ||
+                            (strpos($item_data, 'Cold')    !== false) ||
+                            (strpos($item_data, 'Magic')   !== false) ||
+                            (strpos($item_data, 'Disease') !== false) ||
+                            (strpos($item_data, 'Poison')  !== false)
+                            &&
+                            (strpos($item_data, 'DMG:') !== false)
+                        )
+                        {
+                            $item_property = get_item_spell_damage($item_data);
+
+                            $wiki_data .= '| spdmgtype = ' . $item_property[0] . "\n";
+                            $wiki_data .= '| spdmgnum  = ' . $item_property[1] . "\n";
+                        }
+
+                        $base_stats = Array();
+                        array_push($base_stats, 'STR');
+                        array_push($base_stats, 'STA');
+                        array_push($base_stats, 'AGI');
+                        array_push($base_stats, 'DEX');
+                        array_push($base_stats, 'INT');
+                        array_push($base_stats, 'WIS');
+                        array_push($base_stats, 'CHA');
+
+                        foreach ($base_stats as $base_stat)
+                        {
+                            if (strpos($item_data, $base_stat . ':') !== false)
+                            {
+                                $item_property = get_item_property($item_data, $base_stat);
+
+                                $wiki_data .= '| ' . strtolower($base_stat) . ' = ' . $item_property . "\n";
+                            }
+                        }
+
+                        if (strpos($item_data, 'HP:') !== false)
+                        {
+                            $item_property = get_item_property($item_data, 'HP');
+
+                            $wiki_data .= '| health = ' . $item_property . "\n";
+                        }
+
+                        if (strpos($item_data, 'MANA:') !== false)
+                        {
+                            $item_property = get_item_property($item_data, 'MANA');
+
+                            $wiki_data .= '| mana = ' . $item_property . "\n";
+                        }
+
+                        $resist_stats = Array();
+                        array_push($resist_stats, 'FR');
+                        array_push($resist_stats, 'CR');
+                        array_push($resist_stats, 'MR');
+                        array_push($resist_stats, 'DR');
+                        array_push($resist_stats, 'PR');
+
+                        $resist_stats_wiki = Array();
+                        array_push($resist_stats_wiki, 'svfire');
+                        array_push($resist_stats_wiki, 'svcold');
+                        array_push($resist_stats_wiki, 'svmagic');
+                        array_push($resist_stats_wiki, 'svdisease');
+                        array_push($resist_stats_wiki, 'svpoison');
+
+                        foreach ($resist_stats as $key => $resist_stat)
+                        {
+                            if (strpos($item_data, $resist_stat . ':') !== false)
+                            {
+                                $item_property = get_item_property($item_data, $resist_stat);
+
+                                $wiki_data .= '| ' . $resist_stats_wiki[$key] . ' = ' . $item_property . "\n";
+                            }
+                        }
+
+                        if (strpos($item_data, 'Focus Effect:') !== false)
+                        {
+                            $item_property = get_item_focus_effect($item_data);
+
+                            $wiki_data .= '| focuseffect = ' . $item_property . "\n";
+                        }
+
+                        if (strpos($item_data, "\nEffect:") !== false)
+                        {
+                            $item_property = get_item_effect($item_data);
+
+                            $wiki_data .= '| effect = ' . $item_property[0] . "\n";
+
+                            if ($item_property[1] !== 'null')
+                                $wiki_data .= '| effectflag = ' . $item_property[1] . "\n";
+
+                            if ($item_property[2] !== 'null')
+                                $wiki_data .= '| effectcast = ' . $item_property[2] . "\n";
+                        }
+
+                        if ((strpos($item_data, 'Effect:') !== false) && (strpos($item_data, 'Haste')))
+                        {
+                            $item_property = get_item_haste($item_data);
+
+                            $wiki_data .= '| haste = ' . $item_property . "\n";
+                        }
+
+                        $advanced_item_effects = Array();
+                        array_push($advanced_item_effects, 'Aggression');
+                        array_push($advanced_item_effects, 'Critical Strike');
+                        array_push($advanced_item_effects, 'Damage Reduction');
+                        array_push($advanced_item_effects, 'Flowing Thought');
+                        array_push($advanced_item_effects, 'Mind Shield');
+                        array_push($advanced_item_effects, 'Spell Ward');
+                        array_push($advanced_item_effects, 'Stun Resist');
+
+                        $advanced_item_effects_wiki = Array();
+                        array_push($advanced_item_effects_wiki, 'aggression');
+                        array_push($advanced_item_effects_wiki, 'critstrike');
+                        array_push($advanced_item_effects_wiki, 'dmgreduction');
+                        array_push($advanced_item_effects_wiki, 'flowingthought');
+                        array_push($advanced_item_effects_wiki, 'mindshield');
+                        array_push($advanced_item_effects_wiki, 'spellward');
+                        array_push($advanced_item_effects_wiki, 'stunresist');
+
+                        foreach ($advanced_item_effects as $key => $advanced_item_effect)
+                        {
+                            if (strpos($item_data, $advanced_item_effect . ':') !== false)
+                            {
+                                $item_property = get_item_property($item_data, $advanced_item_effect);
+
+                                $wiki_data .= '| ' . $advanced_item_effects_wiki[$key] . ' = ' . $item_property . "\n";
+                            }
+                        }
+
+                        if (strpos($item_data, 'Range:') !== false)
+                        {
+                            $item_property = get_item_property($item_data, 'Range');
+
+                            $wiki_data .= '| range = ' . $item_property . "\n";
+                        }
+
+                        if (strpos($item_data, 'Weight:') !== false)
+                        {
+                            $item_property = get_item_decimal($item_data, 'Weight');
+
+                            $wiki_data .= '| wt = ' . $item_property . "\n";
+                        }
+
+                        if (strpos($item_data, 'Size:') !== false)
+                        {
+                            $item_property = get_item_size($item_data);
+
+                            $wiki_data .= '| size = ' . $item_property . "\n";
+                        }
+
+                        if ((strpos($item_data, 'Type') !== false) && (strpos($item_data, 'Aug Slot:') !== false))
+                        {
+                            $item_aug_slots = get_item_aug_slots($item_data);
+
+                            $aug_slot_number = 1;
+
+                            foreach ($item_aug_slots as $item_aug_slot)
+                            {
+                                $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $item_aug_slot[1] . "\n";
+
+                                $aug_slot_number++;
+                            }
+                        }
+
+                        if (strpos($item_data, 'Class:') !== false)
+                        {
+                            $item_classes = get_item_property_list($item_data, 'Class');
+
+                            if (in_array('ALL', $item_classes))
+                            {
+                                $item_classes = Array();
+                                array_push($item_classes, 'WAR');
+                                array_push($item_classes, 'CLR');
+                                array_push($item_classes, 'PAL');
+                                array_push($item_classes, 'RNG');
+                                array_push($item_classes, 'SHD');
+                                array_push($item_classes, 'DRU');
+                                array_push($item_classes, 'MNK');
+                                array_push($item_classes, 'BRD');
+                                array_push($item_classes, 'ROG');
+                                array_push($item_classes, 'SHM');
+                                array_push($item_classes, 'NEC');
+                                array_push($item_classes, 'WIZ');
+                                array_push($item_classes, 'MAG');
+                                array_push($item_classes, 'ENC');
+                                array_push($item_classes, 'BST');
+                            }
+
+                            $class_number = 1;
+
+                            foreach ($item_classes as $item_class)
+                            {
+                                $wiki_data .= '| class' . $class_number . ' = ' . $item_class . "\n";
+
+                                $class_number++;
+                            }
+                        }
+
+                        if (strpos($item_data, 'Race:') !== false)
+                        {
+                            $item_races = get_item_property_list($item_data, 'Race');
+
+                            if (in_array('ALL', $item_races))
+                            {
+                                $item_races = Array();
+                                array_push($item_races, 'BAR');
+                                array_push($item_races, 'DEF');
+                                array_push($item_races, 'DWF');
+                                array_push($item_races, 'ERU');
+                                array_push($item_races, 'FRG');
+                                array_push($item_races, 'GNM');
+                                array_push($item_races, 'HEF');
+                                array_push($item_races, 'HFL');
+                                array_push($item_races, 'HIE');
+                                array_push($item_races, 'HUM');
+                                array_push($item_races, 'IKS');
+                                array_push($item_races, 'OGR');
+                                array_push($item_races, 'TRL');
+                                array_push($item_races, 'VAH');
+                                array_push($item_races, 'ELF');
+                            }
+
+                            $race_number = 1;
+
+                            foreach ($item_races as $item_race)
+                            {
+                                $wiki_data .= '| race' . $race_number . ' = ' . $item_race . "\n";
+
+                                $race_number++;
+                            }
+                        }
+
+                        $wiki_data .= '| }}';
+
+                        echo '<p>';
+                        echo '<div style="background-color: #222222; color: white; width: 400px; padding: 8px;">' . '<b>' . $item_name . '</b>' . '</div>';
+                        echo '<br>';
+                        echo '<div style="background-color: #222222; color: white; width: 400px; padding: 8px;">' . $item_data_html . '</div>';
+                        echo '<br>';
+                        echo '<textarea cols="75" rows="25">' . $wiki_data . '</textarea>';
+                        echo '<textarea cols="75" rows="25">' . $item_data . '</textarea>';
+                        echo '</p>';
+                    }
+                    else
+                    {
+                        $item_name = $font->plaintext;
+
+                        $item_name = str_replace('`', "'", $item_name); // tilde fix
+
+                        $item_name = str_replace('&lsquo;', "'", $item_name); // quote fix
+
+                        $item_name = str_replace('Shirtri', 'Shiritri', $item_name); // Shiritri typo fix
+
+                        $item_name = trim($item_name, "\n");
+                    }
+                }
+
+                echo '<hr>';
+            }
+        }
+
+    ?>
+
+    <div style="clear: both;"></div>
+
+    <div id="bottom"><a href="#top">Top</a></div>
+
+    <script type="text/javascript">
+
+        $("#id_search_text").focus();
+
+        $.extend
+        (
+            {
+                get_url_vars: function ()
+                {
+                    var vars = [], hash;
+                    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+                    for (var i = 0; i < hashes.length; i++)
+                    {
+                        hash = hashes[i].split('=');
+                        vars.push(hash[0]);
+                        vars[hash[0]] = hash[1];
+                    }
+                    return vars;
+                },
+                get_url_var: function (name)
+                {
+                    return $.get_url_vars()[name];
+                }
+            }
+        );
+
+        var querySearch = $.get_url_var('search');
+
+        $('#id_search_text').attr('value', querySearch);
+
+        var querySlot = $.get_url_var('slot');
+
+        $('#id_slot_select').attr('value', querySlot);
+
+    </script>
+
+</body>
+
+</html>
