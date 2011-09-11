@@ -6,7 +6,7 @@
 
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
 
-    <!-- <link rel="stylesheet" type="text/css" href="index.css" /> -->
+    <link rel="stylesheet" type="text/css" href="index.css" />
 
     <title>fomelo2wiki</title>
 
@@ -15,6 +15,8 @@
 <body>
 
     <div id="top"></div>
+
+    <div id="id_floating_links"><a href="http://shardsofdalaya.com/">Shards of Dalaya</a> | <a href="http://forum.shardsofdalaya.com/">Forums</a> | <a href="http://wiki.shardsofdalaya.com/">Wiki</a> | <a href="http://shardsofdalaya.com/fomelo/">Fomelo</a> | <a href="http://www.shardsofdalaya.com/vendorlist/listinvdata.php">Vendor List</a><br /><a href="#top">Top</a> | <a href="#bottom">Bottom</a></div>
 
     <h1>fomelo2wiki</h1>
 
@@ -89,6 +91,26 @@
             }
 
             return $result;
+        }
+
+        function str_fix_item_name($text)
+        {
+            $text = str_replace('`', "'", $text); // tilde fix
+
+            $text = str_replace('&lsquo;', "'", $text); // quote fix
+
+            $text = str_replace('Shirtri', 'Shiritri', $text); // Shiritri typo fix
+
+            return $text;
+        }
+
+        function str_convert_item_name_to_wiki_name($text)
+        {
+            $text = str_replace('Song:', 'Spell:', $text); // redirect Songs to Spells
+
+            $text = str_replace(' ', '_', $text);
+
+            return $text;
         }
 
         include('simple_html_dom.php');
@@ -309,7 +331,7 @@
         $html = file_get_html($url, false, $file_get_context);
 
         if (strpos($html->plaintext, 'Character not found') !== false)
-            die('<p style="background-color: red; color: white; width: 400px; padding: 8px;">fomelo info: Character not found</p>');
+            die('<p class="class_red_paragraph">fomelo info: Character not found</p>');
 
         echo '<hr>';
 
@@ -360,15 +382,9 @@
 
                         $wiki_item_name = $item_name;
 
-                        $wiki_item_name = str_replace('`', "'", $wiki_item_name); // tilde fix
+                        $wiki_item_name = str_fix_item_name($wiki_item_name);
 
-                        $wiki_item_name = str_replace('&lsquo;', "'", $wiki_item_name); // quote fix
-
-                        $wiki_item_name = str_replace('Shirtri', 'Shiritri', $wiki_item_name); // Shiritri typo fix
-
-                        $wiki_item_name = str_replace('Song:', 'Spell:', $wiki_item_name); // redirect Songs to Spells
-
-                        $wiki_item_name = str_replace(' ', '_', $wiki_item_name);
+                        $wiki_item_name = str_convert_item_name_to_wiki_name($wiki_item_name);
 
                         $wiki_item_url = 'http://wiki.shardsofdalaya.com/index.php/' . $wiki_item_name;
 
@@ -383,11 +399,15 @@
                         {
                             $wiki_item_html = file_get_html($wiki_item_url, false, $file_get_context);
 
-                            if (strpos($wiki_item_html->plaintext, 'There is currently no text in this page') !== false)
-                                echo '<p style="background-color: green; color: white; width: 400px; padding: 8px;">Wiki Information: There is currently no text in this page</p>';
+                            $wiki_information_no_text = 'There is currently no text in this page';
 
-                            if (strpos($wiki_item_html->plaintext, 'This item is using an outdated format!') !== false)
-                                echo '<p style="background-color: red; color: white; width: 400px; padding: 8px;">Wiki Information: This item is using an outdated format!</p>';
+                            if (strpos($wiki_item_html->plaintext, $wiki_information_no_text) !== false)
+                                echo '<p class="class_green_paragraph">Wiki Information: ' . $wiki_information_no_text . '</p>';
+
+                            $wiki_information_outdated_format = 'This item is using an outdated format!';
+
+                            if (strpos($wiki_item_html->plaintext, $wiki_information_outdated_format) !== false)
+                                echo '<p class="class_red_paragraph">Wiki Information: ' . $wiki_information_outdated_format . '</p>';
                         }
 
                         $item_data_html = $font->innertext;
@@ -800,9 +820,9 @@
                         $wiki_data .= '| }}';
 
                         echo '<p>';
-                        echo '<div style="background-color: #222222; color: white; width: 400px; padding: 8px;">' . '<b>' . $item_name . '</b>' . '</div>';
+                        echo '<div class="class_item_box">' . '<b>' . $item_name . '</b>' . '</div>';
                         echo '<br>';
-                        echo '<div style="background-color: #222222; color: white; width: 400px; padding: 8px;">' . $item_data_html . '</div>';
+                        echo '<div class="class_item_box">' . $item_data_html . '</div>';
                         echo '<br>';
 
                         foreach ($span->find('font') as $font)
@@ -819,23 +839,17 @@
 
                                     $augment_name_wiki = $augment_name;
 
-                                    $augment_name_wiki = str_replace('`', "'", $augment_name_wiki); // tilde fix
+                                    $augment_name_wiki = str_fix_item_name($augment_name_wiki);
 
-                                    $augment_name_wiki = str_replace('&lsquo;', "'", $augment_name_wiki); // quote fix
-
-                                    $augment_name_wiki = str_replace('Shirtri', 'Shiritri', $augment_name_wiki); // Shiritri typo fix
-
-                                    $augment_name_wiki = str_replace('Song:', 'Spell:', $augment_name_wiki); // redirect Songs to Spells
-
-                                    $augment_name_wiki = str_replace(' ', '_', $augment_name_wiki);
+                                    $augment_name_wiki = str_convert_item_name_to_wiki_name($augment_name_wiki);
 
                                     $augment_url_wiki = 'http://wiki.shardsofdalaya.com/index.php/' . $augment_name_wiki;
 
-                                    $augment_link_wiki = '<a href="' . $augment_url_wiki . '" style="color: white;">' . $augment_name_wiki . '</a>';
+                                    $augment_link_wiki = '<a href="' . $augment_url_wiki . '" class="class_white_text">' . $augment_name_wiki . '</a>';
 
                                     $augment_html = str_replace($augment_name, $augment_link_wiki, $augment_html);
 
-                                    echo '<div style="background-color: #222222; color: white; width: 400px; padding: 8px;">' . $augment_html . '</div>';
+                                    echo '<div class="class_item_box">' . $augment_html . '</div>';
                                     echo '<br>';
                                 }
                             }
@@ -850,11 +864,7 @@
                     {
                         $item_name = $font->plaintext;
 
-                        $item_name = str_replace('`', "'", $item_name); // tilde fix
-
-                        $item_name = str_replace('&lsquo;', "'", $item_name); // quote fix
-
-                        $item_name = str_replace('Shirtri', 'Shiritri', $item_name); // Shiritri typo fix
+                        $item_name = str_fix_item_name($item_name);
 
                         $item_name = trim($item_name, "\n");
                     }
