@@ -56,6 +56,10 @@
             </select>
         </p>
 
+        <p>
+            <input type="checkbox" id="id_get_wiki_information_checkbox" name="get_wiki_information" value="true" checked>Get Wiki Information (Slow, but used to determine if a page has no text or is using an outdated format)</input>
+        </p>
+
     </form>
 
     <?php
@@ -291,11 +295,16 @@
         else
             $slot = 'all';
 
-        echo '<p>' . 'search: ' . $search . '</p>';
+        if (isset($_GET['get_wiki_information']))
+            $get_wiki_information = $_GET['get_wiki_information'];
+        else
+            $get_wiki_information = 'false';
+
+        echo '<p>' . 'Search: ' . $search . '</p>';
 
         $url = 'http://shardsofdalaya.com/fomelo/fomelo.php?char=' . $search;
 
-        echo '<p>' . 'fomelo url: ' . '<a href="' . $url . '">' . $url . '</a>' . '</p>';
+        echo '<p>' . 'Fomelo URL: ' . '<a href="' . $url . '">' . $url . '</a>' . '</p>';
 
         $html = file_get_html($url, false, $file_get_context);
 
@@ -306,13 +315,32 @@
 
         foreach ($html->find('span') as $span)
         {
+            foreach ($span->find('img') as $img)
+            {
+                if (strpos($img->src, 'images/icons/item_') !== false)
+                {
+                    $item_image = substr_between($img->src, 'icons/item_', '.png');
+
+                    $img->alt   = $item_image;
+                    $img->title = $item_image;
+                }
+            }
+
             if (strpos($span->id, 't_') !== false)
             {
                 if ((strlen($slot) > 0) && ($slot !== 'all'))
                     if ($span->id !== $slot)
                         continue;
 
-                echo '<p>' . 'slot: ' . $span->id . '</p>';
+                $slot_name = $span->id;
+
+                $slot_name = substr($slot_name, 2);
+
+                $slot_name = str_replace('_', ' ', $slot_name);
+
+                $slot_name = ucwords($slot_name);
+
+                echo '<p>' . 'Slot: ' . $slot_name . '</p>';
 
                 $item_name = 0;
 
@@ -326,7 +354,7 @@
 
                         if (strpos($item_name, 'Empty slot') !== false)
                         {
-                            echo '<p>' . 'Empty slot' . '</p>';
+                            echo '<p>' . 'Empty Slot' . '</p>';
                             continue;
                         }
 
@@ -345,19 +373,22 @@
                         $wiki_item_url = 'http://wiki.shardsofdalaya.com/index.php/' . $wiki_item_name;
 
                         echo '<p>';
-                        echo 'wiki url: ';
+                        echo 'Wiki URL: ';
                         echo '<a href="' . $wiki_item_url . '">';
                         echo $wiki_item_name;
                         echo '</a>';
                         echo '</p>';
 
-                        $wiki_item_html = file_get_html($wiki_item_url, false, $file_get_context);
+                        if ($get_wiki_information == 'true')
+                        {
+                            $wiki_item_html = file_get_html($wiki_item_url, false, $file_get_context);
 
-                        if (strpos($wiki_item_html->plaintext, 'There is currently no text in this page') !== false)
-                            echo '<p style="background-color: green; color: white; width: 400px; padding: 8px;">wiki info: There is currently no text in this page</p>';
+                            if (strpos($wiki_item_html->plaintext, 'There is currently no text in this page') !== false)
+                                echo '<p style="background-color: green; color: white; width: 400px; padding: 8px;">Wiki Information: There is currently no text in this page</p>';
 
-                        if (strpos($wiki_item_html->plaintext, 'This item is using an outdated format!') !== false)
-                            echo '<p style="background-color: red; color: white; width: 400px; padding: 8px;">wiki info: This item is using an outdated format!</p>';
+                            if (strpos($wiki_item_html->plaintext, 'This item is using an outdated format!') !== false)
+                                echo '<p style="background-color: red; color: white; width: 400px; padding: 8px;">Wiki Information: This item is using an outdated format!</p>';
+                        }
 
                         $item_data_html = $font->innertext;
 
@@ -810,6 +841,7 @@
                             }
                         }
 
+                        echo 'Wiki Code:' . '<br>';
                         echo '<textarea cols="75" rows="25">' . $wiki_data . '</textarea>';
                         echo '<textarea cols="75" rows="25">' . $item_data . '</textarea>';
                         echo '</p>';
@@ -835,6 +867,8 @@
     ?>
 
     <div style="clear: both;"></div>
+
+    <p><a href="https://github.com/evrehuntera/fomelo2wiki">https://github.com/evrehuntera/fomelo2wiki</a></p>
 
     <div id="bottom"><a href="#top">Top</a></div>
 
@@ -871,6 +905,13 @@
         var querySlot = $.get_url_var('slot');
 
         $('#id_slot_select').attr('value', querySlot);
+
+        var queryGetWikiInformation = $.get_url_var('get_wiki_information');
+
+        if (queryGetWikiInformation == 'true')
+            $('#id_get_wiki_information_checkbox').attr('checked', true);
+        else
+            $('#id_get_wiki_information_checkbox').attr('checked', false);
 
     </script>
 
