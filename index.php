@@ -600,8 +600,8 @@
                         {
                             $item_property = get_item_bane_damage($item_data);
 
-                            $wiki_data .= '| banedmgmod = ' . $item_property[0] . "\n";
-                            $wiki_data .= '| banedmgnum = ' . $item_property[1] . "\n";
+                            $wiki_data .= '| banedmgmod = ' . $item_property[1] . "\n";
+                            $wiki_data .= '| banedmgnum = ' . $item_property[0] . "\n";
                         }
 
                         if
