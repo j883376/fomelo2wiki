@@ -561,6 +561,8 @@
                         {
                             $item_property = get_item_skill($item_data);
 
+                            $item_property = preg_replace('/(\d+H)\s+Slash/', '$1 Slashing', $item_property);
+
                             $wiki_data .= '| skill = ' . $item_property . "\n";
                         }
 
