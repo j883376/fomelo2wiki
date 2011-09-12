@@ -527,6 +527,9 @@
 
                             foreach ($item_slots as $item_slot)
                             {
+                                if ($item_slot == 'Shoulder')
+                                    $item_slot = 'Shoulders';
+
                                 $wiki_data .= '| slot' . $slot_number . ' = ' . $item_slot . "\n";
 
                                 $slot_number++;
