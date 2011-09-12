@@ -59,7 +59,9 @@
         </p>
 
         <p>
-            <input type="checkbox" id="id_get_wiki_information_checkbox" name="get_wiki_information" value="true" checked>Get Wiki Information (Slow, but used to determine if a page has no text or is using an outdated format)</input>
+            <input type="checkbox" id="id_get_wiki_information_checkbox" name="get_wiki_information" value="true">Get information from Wiki (Slow, but used to determine if a page has no text or is using an outdated format)</input>
+            <br>
+            <input type="checkbox" id="id_only_show_wiki_information_items_checkbox" name="only_show_wiki_information_items" value="true">Only show items with information found from Wiki (Useful for adding new items and updating outdated items)</input>
         </p>
 
     </form>
@@ -322,6 +324,11 @@
         else
             $get_wiki_information = 'false';
 
+        if (isset($_GET['only_show_wiki_information_items']))
+            $only_show_wiki_information_items = $_GET['only_show_wiki_information_items'];
+        else
+            $only_show_wiki_information_items = 'false';
+
         echo '<p>' . 'Search: ' . $search . '</p>';
 
         $url = 'http://shardsofdalaya.com/fomelo/fomelo.php?char=' . $search;
@@ -330,8 +337,10 @@
 
         $html = file_get_html($url, false, $file_get_context);
 
-        if (strpos($html->plaintext, 'Character not found') !== false)
-            die('<p class="class_red_paragraph">fomelo info: Character not found</p>');
+        $fomelo_information_character_not_found = 'Character not found';
+
+        if (strpos($html->plaintext, $fomelo_information_character_not_found) !== false)
+            die('<p class="class_red_paragraph">Fomelo Information: ' . $fomelo_information_character_not_found . '</p>');
 
         echo '<hr>';
 
@@ -399,15 +408,34 @@
                         {
                             $wiki_item_html = file_get_html($wiki_item_url, false, $file_get_context);
 
+                            $wiki_information_found = 0;
+
                             $wiki_information_no_text = 'There is currently no text in this page';
 
                             if (strpos($wiki_item_html->plaintext, $wiki_information_no_text) !== false)
+                            {
+                                $wiki_information_found = 1;
+
                                 echo '<p class="class_green_paragraph">Wiki Information: ' . $wiki_information_no_text . '</p>';
+                            }
 
                             $wiki_information_outdated_format = 'This item is using an outdated format!';
 
                             if (strpos($wiki_item_html->plaintext, $wiki_information_outdated_format) !== false)
+                            {
+                                $wiki_information_found = 1;
+
                                 echo '<p class="class_red_paragraph">Wiki Information: ' . $wiki_information_outdated_format . '</p>';
+                            }
+                        }
+
+                        if ($get_wiki_information == 'true' && $only_show_wiki_information_items == 'true')
+                        {
+                            if ($wiki_information_found == 0)
+                            {
+                                echo '<p>' . 'No Wiki Information found! Skipped.' . '</p>';
+                                continue;
+                            }
                         }
 
                         $item_data_html = $font->innertext;
@@ -878,7 +906,11 @@
 
     <div style="clear: both;"></div>
 
-    <p><a href="https://github.com/evrehuntera/fomelo2wiki">https://github.com/evrehuntera/fomelo2wiki</a></p>
+    <p>
+        fomelo2wiki @ GitHub
+        <br>
+        <a href="https://github.com/evrehuntera/fomelo2wiki">https://github.com/evrehuntera/fomelo2wiki</a>
+    </p>
 
     <div id="bottom"><a href="#top">Top</a></div>
 
@@ -922,6 +954,13 @@
             $('#id_get_wiki_information_checkbox').attr('checked', true);
         else
             $('#id_get_wiki_information_checkbox').attr('checked', false);
+
+        var queryOnlyShowWikiInformationItems = $.get_url_var('only_show_wiki_information_items');
+
+        if (queryOnlyShowWikiInformationItems == 'true')
+            $('#id_only_show_wiki_information_items_checkbox').attr('checked', true);
+        else
+            $('#id_only_show_wiki_information_items_checkbox').attr('checked', false);
 
     </script>
 
