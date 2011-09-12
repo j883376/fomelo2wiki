@@ -502,8 +502,15 @@
 
                         $wiki_data .= '<!--End Infobox - Below are stats-->' . "\n";
 
-                        if (strpos($item_data, '[BOUND]') !== false)
+                        if
+                        (
+                            (strpos($item_data, '[BOUND]')         !== false) ||
+                            (strpos($item_data, '[BIND ON EQUIP]') !== false) ||
+                            (strpos($item_data, '[Bind on Equip]') !== false)
+                        )
+                        {
                             $wiki_data .= '| flagboe = 1' . "\n";
+                        }
 
                         if (strpos($item_data, '[FACTION BOUND]') !== false)
                             $wiki_data .= '| flagfac = 1' . "\n";
