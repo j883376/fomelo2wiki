@@ -250,6 +250,13 @@
 
             $key = substr($text, 0, $find);
 
+            if (strpos($key, 'Haste') !== false)
+            {
+                $find = strpos($text, 'Haste');
+
+                $key = substr($key, $find);
+            }
+
             $value1 = 'null';
             $value2 = 'null';
 
