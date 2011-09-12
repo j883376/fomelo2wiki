@@ -164,7 +164,7 @@
 
         function get_item_skill($text)
         {
-            if (preg_match('/Skill:\s+(1H Blunt|1H Slashing|2H Blunt|Piercing|Archery|Throwing|Hand to Hand)/', $text, $matches))
+            if (preg_match('/Skill:\s+(1H Blunt|1H Slash|1H Slashing|2H Blunt|2H Slash|2H Slashing|Piercing|Archery|Throwing|Hand to Hand)/', $text, $matches))
                 return $matches[1];
 
             return 0;
