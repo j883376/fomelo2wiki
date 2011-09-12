@@ -768,7 +768,7 @@
                                 {
                                     if (preg_match('/Type:\s+(\d+)/', $font->plaintext, $matches))
                                     {
-                                        if (strpos($wiki_data, '| augslot1 = '))
+                                        if (strpos($wiki_data, '| augslot1 = ') !== false)
                                             $aug_slot_number = 2;
 
                                         $item_data .= 'Type ' . $matches[1] . ' Aug Slot: Not Empty' . "\n";
