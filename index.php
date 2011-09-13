@@ -972,6 +972,11 @@
                             }
                         }
 
+                        if (strpos($item_data, '[PRISTINE]') !== false)
+                        {
+                            echo '<p class="class_orange_paragraph">Warning: This item is [PRISTINE] and may have stat bonuses applied to it!' . '</p>';
+                        }
+
                         if (strpos($item_data, '[EXPABLE]') !== false)
                         {
                             echo '<p class="class_orange_paragraph">Warning: This item is [EXPABLE] and may have stat bonuses applied to it!' . '</p>';
