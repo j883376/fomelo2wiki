@@ -131,8 +131,71 @@
 
         function get_item_property($text, $property)
         {
-            if (preg_match('/' . $property . ':\s+([+-]?\d+[%]?)/', $text, $matches))
-                return $matches[1];
+            if (preg_match('/' . $property . ':\s+([*]?[+-]?\d+[%]?[*]?)/', $text, $matches))
+            {
+                //return $matches[1];
+
+                $value = $matches[1];
+
+                if (strpos($value, '%') === false)
+                {
+                    if (strpos($value, '*') !== false)
+                    {
+                        $positive_or_negative = 'null';
+
+                        if (strpos($value, '+') !== false)
+                            $positive_or_negative = '+';
+
+                        if (strpos($value, '-') !== false)
+                            $positive_or_negative = '-';
+
+                        $find = strpos($value, $positive_or_negative);
+
+                        if ($positive_or_negative == 'null')
+                            $find = strpos($value, '*');
+
+                        $value_int = substr($value, $find + 1, -1);
+
+                        if ($positive_or_negative == '-')
+                            $value_int *= -1;
+
+                        if
+                        (
+                            (strpos($matches[0], 'AC')        !== false) ||
+                            (strpos($matches[0], 'Atk Delay') !== false)
+                        )
+                        {
+                            $positive_or_negative = '+-';
+                        }
+
+                        if ($positive_or_negative == '+')
+                        {
+                            if ($value_int <= 10)
+                                $value_int -= 1;
+                            else
+                                $value_int = ceil($value_int / 1.10);
+                        }
+                        else if ($positive_or_negative == '-')
+                        {
+                            if ($value_int < 0 && $value_int > -11)
+                                $value_int += 1;
+                            else
+                                $value_int = floor($value_int * 1.10);
+                        }
+                        else if ($positive_or_negative == '+-')
+                        {
+                            if ($value_int <= 10)
+                                $value_int -= 1;
+                            else
+                                $value_int -= (floor($value_int * 1.10) - $value_int);
+                        }
+
+                        return $value_int;
+                    }
+                }
+
+                return $value;
+            }
 
             return 0;
         }
@@ -407,7 +470,7 @@
                         echo '<p>';
                         echo 'Wiki URL: ';
                         echo '<a href="' . $wiki_item_url . '">';
-                        echo $wiki_item_name;
+                        echo $wiki_item_url;
                         echo '</a>';
                         echo '</p>';
 
@@ -452,6 +515,12 @@
                         $item_data = $item_data_html;
 
                         $item_data = preg_replace('#<br\s*/?>#i', "\n", $item_data);
+
+                        if (strpos($item_data, '[EXPABLE]') === false)
+                        {
+                            $item_data = str_replace("<span style='color:#4DFF2F'>", '*', $item_data);
+                            $item_data = str_replace('</span>', '*', $item_data);
+                        }
 
                         $item_data = strip_tags($item_data);
 
@@ -505,6 +574,7 @@
                         if
                         (
                             (strpos($item_data, '[BOUND]')         !== false) ||
+                            (strpos($item_data, '[BIND]')          !== false) ||
                             (strpos($item_data, '[BIND ON EQUIP]') !== false) ||
                             (strpos($item_data, '[Bind on Equip]') !== false)
                         )
@@ -900,6 +970,11 @@
                                     echo '<br>';
                                 }
                             }
+                        }
+
+                        if (strpos($item_data, '[EXPABLE]') !== false)
+                        {
+                            echo '<p class="class_orange_paragraph">Warning: This item is [EXPABLE] and may have stat bonuses applied to it!' . '</p>';
                         }
 
                         echo 'Wiki Code:' . '<br>';
