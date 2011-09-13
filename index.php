@@ -190,6 +190,9 @@
                                 $value_int -= (floor($value_int * 1.10) - $value_int);
                         }
 
+                        if ($positive_or_negative == '+')
+                            $value_int = '+' . $value_int;
+
                         return $value_int;
                     }
                 }
@@ -973,14 +976,10 @@
                         }
 
                         if (strpos($item_data, '[PRISTINE]') !== false)
-                        {
                             echo '<p class="class_orange_paragraph">Warning: This item is [PRISTINE] and may have stat bonuses applied to it!' . '</p>';
-                        }
 
                         if (strpos($item_data, '[EXPABLE]') !== false)
-                        {
                             echo '<p class="class_orange_paragraph">Warning: This item is [EXPABLE] and may have stat bonuses applied to it!' . '</p>';
-                        }
 
                         echo 'Wiki Code:' . '<br>';
                         echo '<textarea cols="75" rows="25">' . $wiki_data . '</textarea>';
