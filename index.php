@@ -174,14 +174,13 @@
                                 else
                                     $base = round($pristine / 1.10);
                             }
-                            }
-                            else if ($pristine < 0)
-                            {
-                                if ($pristine < 0 && $pristine > -11)
-                                    $base = $pristine - 1;
-                                else
-                                    $base = round($pristine * 1.10);
-                            }
+                        }
+                        else if ($pristine < 0)
+                        {
+                            if ($pristine < 0 && $pristine > -11)
+                                $base = $pristine - 1;
+                            else
+                                $base = round($pristine * 1.10);
                         }
 
                         if ($base > 0 && strpos($matches[0], 'AC') === false)
