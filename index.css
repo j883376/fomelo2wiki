@@ -21,6 +21,14 @@
     padding: 8px;
 }
 
+.class_orange_paragraph
+{
+    background-color: orange;
+    color: white;
+    width: 400px;
+    padding: 8px;
+}
+
 .class_green_paragraph
 {
     background-color: green;
