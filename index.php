@@ -154,46 +154,40 @@
                         if ($positive_or_negative == 'null')
                             $find = strpos($value, '*');
 
-                        $value_int = substr($value, $find + 1, -1);
+                        $pristine = substr($value, $find + 1, -1);
 
                         if ($positive_or_negative == '-')
-                            $value_int *= -1;
+                            $pristine *= -1;
 
-                        if
-                        (
-                            (strpos($matches[0], 'AC')        !== false) ||
-                            (strpos($matches[0], 'Atk Delay') !== false)
-                        )
-                        {
-                            $positive_or_negative = '+-';
-                        }
+                        $base = 0;
 
-                        if ($positive_or_negative == '+')
+                        if ($pristine > 0)
                         {
-                            if ($value_int <= 10)
-                                $value_int -= 1;
+                            if (strpos($matches[0], 'Atk Delay') !== false)
+                            {
+                                $base = round($pristine * 1.10);
+                            }
                             else
-                                $value_int = ceil($value_int / 1.10);
-                        }
-                        else if ($positive_or_negative == '-')
-                        {
-                            if ($value_int < 0 && $value_int > -11)
-                                $value_int += 1;
-                            else
-                                $value_int = floor($value_int * 1.10);
-                        }
-                        else if ($positive_or_negative == '+-')
-                        {
-                            if ($value_int <= 10)
-                                $value_int -= 1;
-                            else
-                                $value_int -= (floor($value_int * 1.10) - $value_int);
+                            {
+                                if ($pristine <= 10)
+                                    $base = $pristine - 1;
+                                else
+                                    $base = round($pristine / 1.10);
+                            }
+                            }
+                            else if ($pristine < 0)
+                            {
+                                if ($pristine < 0 && $pristine > -11)
+                                    $base = $pristine - 1;
+                                else
+                                    $base = round($pristine * 1.10);
+                            }
                         }
 
-                        if ($positive_or_negative == '+')
-                            $value_int = '+' . $value_int;
+                        if ($base > 0 && strpos($matches[0], 'AC') === false)
+                            $base = '+' . $base;
 
-                        return $value_int;
+                        return $base;
                     }
                 }
 
