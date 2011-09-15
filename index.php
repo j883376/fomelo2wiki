@@ -364,6 +364,9 @@
                 $value2 = substr_between($text, ', ', ')');
             }
 
+            if ($value2 == 'Instant')
+                $value2 = 0;
+
             $effect = Array();
             array_push($effect, $key);
             array_push($effect, $value1);
@@ -582,7 +585,6 @@
                         if (strpos($item_data, '[EXPABLE]') !== false)
                         {
                             $wiki_data .= '| expable = 1' . "\n";
-
 
                             if ((strpos($item_data, 'Level:') !== false) && (strpos($item_data, 'Mod:') !== false))
                             {
