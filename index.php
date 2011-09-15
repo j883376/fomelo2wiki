@@ -121,12 +121,44 @@
 
         $item_name = 'null';
 
+        function get_item_exp_level($text)
+        {
+            if (preg_match('/Level:\s+(\d+)\/\d+/', $text, $matches))
+                return $matches[1];
+
+            return 0;
+        }
+
         function get_item_exp_levels($text)
         {
             if (preg_match('/Level:\s+\d+\/(\d+)/', $text, $matches))
                 return $matches[1];
 
             return 0;
+        }
+
+        function get_item_exp_growth_rate($exp_level, $exp_mod)
+        {
+            $percentage = false;
+
+            if (strpos($exp_mod, '%') !== false)
+                $percentage = true;
+
+            $find = strpos($exp_mod, '+');
+
+            $value = substr($exp_mod, $find + 1);
+
+            if ($percentage == true)
+                $value = substr_between($exp_mod, '+', '%');
+
+            $exp_growth_rate = $value / $exp_level;
+
+            if ($percentage == true)
+                $exp_growth_rate .= '%';
+            else
+                $exp_growth_rate = '+' . $exp_growth_rate;
+
+            return $exp_growth_rate;
         }
 
         function get_item_property($text, $property)
@@ -551,7 +583,17 @@
                         {
                             $wiki_data .= '| expable = 1' . "\n";
 
-                            $wiki_data .= '| expgrowthrate' . "\n";
+
+                            if ((strpos($item_data, 'Level:') !== false) && (strpos($item_data, 'Mod:') !== false))
+                            {
+                                $item_exp_level = get_item_exp_level($item_data);
+
+                                $item_exp_mod = get_item_property($item_data, 'Mod');
+
+                                $item_exp_growth_rate = get_item_exp_growth_rate($item_exp_level, $item_exp_mod);
+
+                                $wiki_data .= '| expgrowthrate = ' . $item_exp_growth_rate . "\n";
+                            }
                         }
 
                         if (strpos($item_data, 'Level:') !== false)
