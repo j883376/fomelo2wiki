@@ -11,19 +11,12 @@
 
     set_time_limit(0); // prevent maximum execution time timeout
 
-    $values = Array();
-    array_push($values, '40');
-    array_push($values, '-40');
-    array_push($values, '38');
-    array_push($values, '-4');
-    array_push($values, '55');
-    array_push($values, '16');
-    array_push($values, '36');
-    array_push($values, '10');
-    array_push($values, '23');
-    array_push($values, '12');
+    /*
+    $values = '40 -40 38 4 -4 55 16 36 10 23 12';
 
-    $attack_delay = false;
+    $attack_delay = true;
+
+    $values = explode(' ', $values);
 
     foreach ($values as $pristine)
     {
@@ -59,4 +52,12 @@
 
         echo '</p>';
     }
+    */
+
+    $text = "Atk Delay: 21\n";
+
+    $property = 'Atk Delay';
+
+    if (preg_match('/' . $property . ':\s+([*]?[+-]?\d+[%]?[*]?)/', $text, $matches))
+        print_r($matches);
 ?>

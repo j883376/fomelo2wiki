@@ -4,7 +4,7 @@
 
     <meta http-equiv="content-type" content="text/html" charset="utf-8" />
 
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 
     <link rel="stylesheet" type="text/css" href="index.css" />
 
@@ -339,38 +339,38 @@
 
             $find = strpos($text, ' (');
 
-            $key = substr($text, 0, $find);
+            $effect_name = substr($text, 0, $find);
 
-            if (strpos($key, 'Haste') !== false)
+            if (strpos($effect_name, 'Haste') !== false)
             {
                 $find = strpos($text, 'Haste');
 
-                $key = substr($key, $find);
+                $effect_name = substr($effect_name, $find);
             }
 
-            $value1 = 'null';
-            $value2 = 'null';
+            $effect_flag = 'null';
+            $effect_cast = 'null';
 
             if (strpos($text, '(Worn)') !== false)
             {
-                $value1 = 'Worn';
+                $effect_flag = 'Worn';
 
-                $value2 = 'null';
+                $effect_cast = 'null';
             }
             else
             {
-                $value1 = substr_between($text, '(', ',');
+                $effect_flag = substr_between($text, '(', ',');
 
-                $value2 = substr_between($text, ', ', ')');
+                $effect_cast = substr_between($text, ', ', ')');
             }
 
-            if ($value2 == 'Instant')
-                $value2 = 0;
+            if ($effect_cast == 'Instant')
+                $effect_cast = 0;
 
             $effect = Array();
-            array_push($effect, $key);
-            array_push($effect, $value1);
-            array_push($effect, $value2);
+            array_push($effect, $effect_name);
+            array_push($effect, $effect_flag);
+            array_push($effect, $effect_cast);
 
             return $effect;
         }
@@ -549,8 +549,23 @@
 
                         if (strpos($item_data, '[EXPABLE]') === false)
                         {
+                            $item_data = str_replace("<span style='color:#4DFF2F'> ", ' *', $item_data);
+
                             $item_data = str_replace("<span style='color:#4DFF2F'>", '*', $item_data);
                             $item_data = str_replace('</span>', '*', $item_data);
+                        }
+
+                        if (strpos($item_data, "<span style='color:#FF0000'>") !== false)
+                        {
+                            //echo '<p>' . 'This item has a Required Level! Skipped.' . '</p>';
+                            //continue;
+
+                            $item_data = str_replace("<span style='color:#FF0000'> ", ' *', $item_data);
+
+                            $item_data = str_replace("<span style='color:#FF0000'>", '*', $item_data);
+                            $item_data = str_replace('</span>', '*', $item_data);
+
+                            $item_data .= "Required Level of ??.\n";
                         }
 
                         $item_data = strip_tags($item_data);
@@ -977,6 +992,7 @@
                         $wiki_data .= '| }}';
 
                         echo '<p>';
+
                         echo '<div class="class_item_box">' . '<b>' . $item_name . '</b>' . '</div>';
                         echo '<br>';
                         echo '<div class="class_item_box">' . $item_data_html . '</div>';
@@ -1018,9 +1034,13 @@
                         if (strpos($item_data, '[EXPABLE]') !== false)
                             echo '<p class="class_orange_paragraph">Warning: This item is [EXPABLE] and may have stat bonuses applied to it!' . '</p>';
 
+                        if (strpos($item_data, 'Required Level') !== false)
+                            echo '<p class="class_orange_paragraph">Warning: This item has a Required Level and may have stat reductions applied to it!' . '</p>';
+
                         echo 'Wiki Code:' . '<br>';
                         echo '<textarea cols="75" rows="25">' . $wiki_data . '</textarea>';
                         echo '<textarea cols="75" rows="25">' . $item_data . '</textarea>';
+
                         echo '</p>';
                     }
                     else
