@@ -215,8 +215,9 @@
                                 $base = round($pristine * 1.10);
                         }
 
-                        if ($base > 0 && strpos($matches[0], 'AC') === false)
-                            $base = '+' . $base;
+                        if ($base > 0)
+                            if (strpos($matches[0], 'AC') === false && strpos($matches[0], 'Atk Delay') === false)
+                                $base = '+' . $base;
 
                         return $base;
                     }
