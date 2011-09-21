@@ -562,10 +562,10 @@
                             //echo '<p>' . 'This item has a Required Level! Skipped.' . '</p>';
                             //continue;
 
-                            $item_data = str_replace("<span style='color:#FF0000'> ", ' *', $item_data);
+                            //$item_data = str_replace("<span style='color:#FF0000'> ", ' *', $item_data);
 
-                            $item_data = str_replace("<span style='color:#FF0000'>", '*', $item_data);
-                            $item_data = str_replace('</span>', '*', $item_data);
+                            //$item_data = str_replace("<span style='color:#FF0000'>", '*', $item_data);
+                            //$item_data = str_replace('</span>', '*', $item_data);
 
                             $item_data .= "Required Level of ??.\n";
                         }
