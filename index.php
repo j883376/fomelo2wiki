@@ -551,10 +551,13 @@
 
                         if (strpos($item_data, '[EXPABLE]') === false)
                         {
-                            $item_data = str_replace("<span style='color:#4DFF2F'> ", ' *', $item_data);
+                            if (strpos($item_data, "<span style='color:#FF0000'>") === false)
+                            {
+                                $item_data = str_replace("<span style='color:#4DFF2F'> ", ' *', $item_data);
 
-                            $item_data = str_replace("<span style='color:#4DFF2F'>", '*', $item_data);
-                            $item_data = str_replace('</span>', '*', $item_data);
+                                $item_data = str_replace("<span style='color:#4DFF2F'>", '*', $item_data);
+                                $item_data = str_replace('</span>', '*', $item_data);
+                            }
                         }
 
                         if (strpos($item_data, "<span style='color:#FF0000'>") !== false)
