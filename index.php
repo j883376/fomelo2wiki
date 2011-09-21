@@ -163,7 +163,7 @@
 
         function get_item_property($text, $property)
         {
-            if (preg_match('/' . $property . ':\s+([*]?[+-]?\d+[%]?[*]?)/', $text, $matches))
+            if (preg_match('/' . "[\n]?" . $property . ':\s+([*]?[+-]?\d+[%]?[*]?)/', $text, $matches))
             {
                 //return $matches[1];
 
@@ -216,8 +216,17 @@
                         }
 
                         if ($base > 0)
-                            if (strpos($matches[0], 'AC') === false && strpos($matches[0], 'Atk Delay') === false)
+                        {
+                            if
+                            (
+                                strpos($matches[0], 'AC')        === false &&
+                                strpos($matches[0], 'Atk Delay') === false &&
+                                strpos($matches[0], 'DMG') === false
+                            )
+                            {
                                 $base = '+' . $base;
+                            }
+                        }
 
                         return $base;
                     }
@@ -225,14 +234,6 @@
 
                 return $value;
             }
-
-            return 0;
-        }
-
-        function get_item_property_newline($text, $property)
-        {
-            if (preg_match('/\n' . $property . ':\s+([+-]?\d+[%]?)/', $text, $matches))
-                return $matches[1];
 
             return 0;
         }
@@ -688,7 +689,7 @@
 
                         if (strpos($item_data, "\nDMG:") !== false)
                         {
-                            $item_property = get_item_property_newline($item_data, 'DMG');
+                            $item_property = get_item_property($item_data, "\nDMG");
 
                             $wiki_data .= '| dmg = ' . $item_property . "\n";
                         }
