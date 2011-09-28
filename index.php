@@ -257,7 +257,7 @@
 
         function get_item_skill($text)
         {
-            if (preg_match('/Skill:\s+(1H Blunt|1H Slash|1H Slashing|2H Blunt|2H Slash|2H Slashing|Piercing|Archery|Throwing|Hand to Hand)/', $text, $matches))
+            if (preg_match('/Skill:\s+(1H Blunt|1H Slash|1H Slashing|2H Blunt|2H Slash|2H Slashing|Piercing|2H Piercing|Archery|Throwing|Hand to Hand)/', $text, $matches))
                 return $matches[1];
 
             return 0;
@@ -599,6 +599,12 @@
                                 $wiki_data .= '| image = ' . $item_image . "\n";
                             }
                         }
+
+			if (strpos($item_data_html, '<span style="font-style:italic" class="lore">') !== false)
+			{
+				$item_lore = substr_between($item_data_html, '<span style="font-style:italic" class="lore">', '</span>');
+				$wiki_data .= '| lore = ' . $item_lore . "\n";
+			}
 
                         $wiki_data .= '| source' . "\n";
 
