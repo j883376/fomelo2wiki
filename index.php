@@ -399,7 +399,7 @@
 
         function get_item_aug_slots($text)
         {
-            if (preg_match_all('/Type\s+(\d+)\s+Aug\s+Slot:/', $text, $matches, PREG_SET_ORDER))
+            if (preg_match_all('/Type\s+(\d+)\s+Aug\s+Slot:\s+Empty/', $text, $matches, PREG_SET_ORDER))
                 return $matches;
 
             return 0;
@@ -897,38 +897,40 @@
                             $wiki_data .= '| size = ' . $item_property . "\n";
                         }
 
+                        $aug_slot_number = 1;
+
+
+                       	foreach ($span->find('font') as $font)
+                        {
+       	                    if ($font->size == 2 && $found_first_item_in_slot == 1)
+       	                    {
+       	                        if (strpos($font->plaintext, 'Type:') !== false)
+       	                        {
+       	                            if (preg_match('/Type:\s+(\d+)/', $font->plaintext, $matches))
+       	                            {
+       	                                if (strpos($wiki_data, '| augslot1 = ') !== false)
+       	                                	$aug_slot_number = 2;
+
+       	                                $item_data .= 'Type ' . $matches[1] . ' Aug Slot: Not Empty' . "\n";
+
+       	                                $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $matches[1] . "\n";
+					$aug_slot_number++;
+       	                            }
+       	                        }
+       	                    }
+       	                }
+
                         if ((strpos($item_data, 'Type') !== false) && (strpos($item_data, 'Aug Slot:') !== false))
                         {
                             $item_aug_slots = get_item_aug_slots($item_data);
 
-                            $aug_slot_number = 1;
+                            //$aug_slot_number = 1;
 
                             foreach ($item_aug_slots as $item_aug_slot)
                             {
                                 $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $item_aug_slot[1] . "\n";
 
                                 $aug_slot_number++;
-                            }
-                        }
-
-                        $aug_slot_number = 1;
-
-                        foreach ($span->find('font') as $font)
-                        {
-                            if ($font->size == 2 && $found_first_item_in_slot == 1)
-                            {
-                                if (strpos($font->plaintext, 'Type:') !== false)
-                                {
-                                    if (preg_match('/Type:\s+(\d+)/', $font->plaintext, $matches))
-                                    {
-                                        if (strpos($wiki_data, '| augslot1 = ') !== false)
-                                            $aug_slot_number = 2;
-
-                                        $item_data .= 'Type ' . $matches[1] . ' Aug Slot: Not Empty' . "\n";
-
-                                        $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $matches[1] . "\n";
-                                    }
-                                }
                             }
                         }
 
