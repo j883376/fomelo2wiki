@@ -257,7 +257,7 @@
 
         function get_item_skill($text)
         {
-            if (preg_match('/Skill:\s+(1H Blunt|1H Slash|1H Slashing|2H Blunt|2H Slash|2H Slashing|Piercing|Archery|Throwing|Hand to Hand)/', $text, $matches))
+            if (preg_match('/Skill:\s+(1H Blunt|1H Slash|1H Slashing|2H Blunt|2H Slash|2H Slashing|Piercing|2H Piercing|Archery|Throwing|Hand to Hand)/', $text, $matches))
                 return $matches[1];
 
             return 0;
@@ -399,7 +399,7 @@
 
         function get_item_aug_slots($text)
         {
-            if (preg_match_all('/Type\s+(\d+)\s+Aug\s+Slot:/', $text, $matches, PREG_SET_ORDER))
+            if (preg_match_all('/Type\s+(\d+)\s+Aug\s+Slot:\s+Empty/', $text, $matches, PREG_SET_ORDER))
                 return $matches;
 
             return 0;
@@ -599,6 +599,12 @@
                                 $wiki_data .= '| image = ' . $item_image . "\n";
                             }
                         }
+
+			if (strpos($item_data_html, '<span style="font-style:italic" class="lore">') !== false)
+			{
+				$item_lore = substr_between($item_data_html, '<span style="font-style:italic" class="lore">', '</span>');
+				$wiki_data .= '| lore = ' . $item_lore . "\n";
+			}
 
                         $wiki_data .= '| source' . "\n";
 
@@ -891,38 +897,40 @@
                             $wiki_data .= '| size = ' . $item_property . "\n";
                         }
 
+                        $aug_slot_number = 1;
+
+
+                       	foreach ($span->find('font') as $font)
+                        {
+       	                    if ($font->size == 2 && $found_first_item_in_slot == 1)
+       	                    {
+       	                        if (strpos($font->plaintext, 'Type:') !== false)
+       	                        {
+       	                            if (preg_match('/Type:\s+(\d+)/', $font->plaintext, $matches))
+       	                            {
+       	                                if (strpos($wiki_data, '| augslot1 = ') !== false)
+       	                                	$aug_slot_number = 2;
+
+       	                                $item_data .= 'Type ' . $matches[1] . ' Aug Slot: Not Empty' . "\n";
+
+       	                                $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $matches[1] . "\n";
+					$aug_slot_number++;
+       	                            }
+       	                        }
+       	                    }
+       	                }
+
                         if ((strpos($item_data, 'Type') !== false) && (strpos($item_data, 'Aug Slot:') !== false))
                         {
                             $item_aug_slots = get_item_aug_slots($item_data);
 
-                            $aug_slot_number = 1;
+                            //$aug_slot_number = 1;
 
                             foreach ($item_aug_slots as $item_aug_slot)
                             {
                                 $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $item_aug_slot[1] . "\n";
 
                                 $aug_slot_number++;
-                            }
-                        }
-
-                        $aug_slot_number = 1;
-
-                        foreach ($span->find('font') as $font)
-                        {
-                            if ($font->size == 2 && $found_first_item_in_slot == 1)
-                            {
-                                if (strpos($font->plaintext, 'Type:') !== false)
-                                {
-                                    if (preg_match('/Type:\s+(\d+)/', $font->plaintext, $matches))
-                                    {
-                                        if (strpos($wiki_data, '| augslot1 = ') !== false)
-                                            $aug_slot_number = 2;
-
-                                        $item_data .= 'Type ' . $matches[1] . ' Aug Slot: Not Empty' . "\n";
-
-                                        $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $matches[1] . "\n";
-                                    }
-                                }
                             }
                         }
 
