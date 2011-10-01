@@ -385,6 +385,14 @@
             return 0;
         }
 
+        function get_item_recommended_level($text)
+        {
+            if (preg_match('/Recommended level of\s+(\d+)/', $text, $matches))
+                return $matches[1];
+
+            return 0;
+        }
+
         function get_item_size($text)
         {
             if (preg_match('/Size:\s+(Tiny|Small|Medium|Large|Giant)/', $text, $matches))
@@ -550,28 +558,10 @@
                         $item_data = preg_replace('#<br\s*/?>#i', "\n", $item_data);
 
                         if (strpos($item_data, '[EXPABLE]') === false)
-                        {
-                            if (strpos($item_data, "<span style='color:#FF0000'>") === false)
-                            {
-                                $item_data = str_replace("<span style='color:#4DFF2F'> ", ' *', $item_data);
+                            $item_data = preg_replace('/\<span style=\'color:#4DFF2F\'\>(.+?)\<\/span\>/i', '*$1*', $item_data);
 
-                                $item_data = str_replace("<span style='color:#4DFF2F'>", '*', $item_data);
-                                $item_data = str_replace('</span>', '*', $item_data);
-                            }
-                        }
-
-                        if (strpos($item_data, "<span style='color:#FF0000'>") !== false)
-                        {
-                            //echo '<p>' . 'This item has a Required Level! Skipped.' . '</p>';
-                            //continue;
-
-                            //$item_data = str_replace("<span style='color:#FF0000'> ", ' *', $item_data);
-
-                            //$item_data = str_replace("<span style='color:#FF0000'>", '*', $item_data);
-                            //$item_data = str_replace('</span>', '*', $item_data);
-
-                            $item_data .= "Required Level of ??.\n";
-                        }
+                        if (strpos($item_data, 'Recommended level of') !== false)
+                            $item_data = preg_replace('/\<span style=\'color:#FF0000\'\>(.+?)\<\/span\>/i', '*$1*', $item_data);
 
                         $item_data = strip_tags($item_data);
 
@@ -891,6 +881,13 @@
                             $wiki_data .= '| wt = ' . $item_property . "\n";
                         }
 
+                        if (strpos($item_data, 'Recommended level of') !== false)
+                        {
+                            $item_property = get_item_recommended_level($item_data);
+
+                            $wiki_data .= '| reclvl = ' . $item_property . "\n";
+                        }
+
                         if (strpos($item_data, 'Size:') !== false)
                         {
                             $item_property = get_item_size($item_data);
@@ -900,26 +897,26 @@
 
                         $aug_slot_number = 1;
 
-
-                       	foreach ($span->find('font') as $font)
+                        foreach ($span->find('font') as $font)
                         {
-       	                    if ($font->size == 2 && $found_first_item_in_slot == 1)
-       	                    {
-       	                        if (strpos($font->plaintext, 'Type:') !== false)
-       	                        {
-       	                            if (preg_match('/Type:\s+(\d+)/', $font->plaintext, $matches))
-       	                            {
-       	                                if (strpos($wiki_data, '| augslot1 = ') !== false)
-       	                                	$aug_slot_number = 2;
+                            if ($font->size == 2 && $found_first_item_in_slot == 1)
+                            {
+                                if (strpos($font->plaintext, 'Type:') !== false)
+                                {
+                                    if (preg_match('/Type:\s+(\d+)/', $font->plaintext, $matches))
+                                    {
+                                        if (strpos($wiki_data, '| augslot1 = ') !== false)
+                                            $aug_slot_number = 2;
 
-       	                                $item_data .= 'Type ' . $matches[1] . ' Aug Slot: Not Empty' . "\n";
+                                        $item_data .= 'Type ' . $matches[1] . ' Aug Slot: Not Empty' . "\n";
 
-       	                                $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $matches[1] . "\n";
-					$aug_slot_number++;
-       	                            }
-       	                        }
-       	                    }
-       	                }
+                                        $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $matches[1] . "\n";
+
+                                        $aug_slot_number++;
+                                    }
+                                }
+                            }
+                        }
 
                         if ((strpos($item_data, 'Type') !== false) && (strpos($item_data, 'Aug Slot:') !== false))
                         {
@@ -927,11 +924,14 @@
 
                             //$aug_slot_number = 1;
 
-                            foreach ($item_aug_slots as $item_aug_slot)
+                            if ($item_aug_slots != 0)
                             {
-                                $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $item_aug_slot[1] . "\n";
+                                foreach ($item_aug_slots as $item_aug_slot)
+                                {
+                                    $wiki_data .= '| augslot' . $aug_slot_number . ' = ' . $item_aug_slot[1] . "\n";
 
-                                $aug_slot_number++;
+                                    $aug_slot_number++;
+                                }
                             }
                         }
 
@@ -1048,8 +1048,8 @@
                         if (strpos($item_data, '[EXPABLE]') !== false)
                             echo '<p class="class_orange_paragraph">Warning: This item is [EXPABLE] and may have stat bonuses applied to it!' . '</p>';
 
-                        if (strpos($item_data, 'Required Level') !== false)
-                            echo '<p class="class_orange_paragraph">Warning: This item has a Required Level and may have stat reductions applied to it!' . '</p>';
+                        if (strpos($item_data, 'Recommended level of') !== false)
+                            echo '<p class="class_orange_paragraph">Warning: This item has a Recommended Level and may have stat reductions applied to it!' . '</p>';
 
                         echo 'Wiki Code:' . '<br>';
                         echo '<textarea cols="75" rows="25">' . $wiki_data . '</textarea>';
