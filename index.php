@@ -600,13 +600,14 @@
                             }
                         }
 
-			if (strpos($item_data_html, '<span style="font-style:italic" class="lore">') !== false)
-			{
-				$item_lore = substr_between($item_data_html, '<span style="font-style:italic" class="lore">', '</span>');
-				$wiki_data .= '| lore = ' . $item_lore . "\n";
-			}
-
                         $wiki_data .= '| source' . "\n";
+
+                        if (strpos($item_data_html, '<span style="font-style:italic" class="lore">') !== false)
+                        {
+                            $item_lore = substr_between($item_data_html, '<span style="font-style:italic" class="lore">', '</span>');
+
+                            $wiki_data .= '| lore = ' . $item_lore . "\n";
+                        }
 
                         if (strpos($item_data, '[EXPABLE]') !== false)
                         {
