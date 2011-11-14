@@ -740,11 +740,11 @@
 
                         if
                         (
-                            (strpos($item_data, 'Fire')    !== false) ||
+                            ((strpos($item_data, 'Fire')    !== false) ||
                             (strpos($item_data, 'Cold')    !== false) ||
                             (strpos($item_data, 'Magic')   !== false) ||
                             (strpos($item_data, 'Disease') !== false) ||
-                            (strpos($item_data, 'Poison')  !== false)
+                            (strpos($item_data, 'Poison')  !== false))
                             &&
                             (strpos($item_data, 'DMG:') !== false)
                         )
