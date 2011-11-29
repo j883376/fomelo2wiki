@@ -302,7 +302,8 @@
 
         function get_item_bane_damage($text)
         {
-            if (preg_match('/Bane\s+DMG:\s+(\d+)\s+(\w+)\s/', $text, $matches))
+			$text = substr_between($text, 'Bane DMG: ', "\n");
+            if (preg_match('/(\d+)\s+(.+)$/', $text, $matches))
             {
                 $bane_damage = Array();
                 array_push($bane_damage, $matches[1]);
